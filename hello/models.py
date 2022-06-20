@@ -5,7 +5,7 @@ class Greeting(models.Model):
     when = models.DateTimeField("date created", auto_now_add=True)
 
 class Game(models.Model):
-    game_id = models.IntegerField(primary_key=True)
+    game_id = models.AutoField(primary_key=True)
     key_word = models.CharField(max_length=100, default="apple")
     finished = models.BooleanField(default=False)
 
