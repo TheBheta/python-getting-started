@@ -8,6 +8,7 @@ class Game(models.Model):
     game_id = models.AutoField(primary_key=True)
     key_word = models.CharField(max_length=100, default="apple")
     finished = models.BooleanField(default=False)
+    host = models.CharField(max_length=100, default="")
     winner = models.CharField(max_length=100, default="")
 
 class Guess(models.Model):

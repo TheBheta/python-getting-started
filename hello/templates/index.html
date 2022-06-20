@@ -1,24 +1,86 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Our Funky HTML Page</title>
-        <meta name="description" content="Our first page">
-        <meta name="keywords" content="html tutorial template">
+        <title>NLTK 20 Questions</title>
+        <meta name="description" content="A fun word game for ice-breakers">
         <script src = "https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <style>
+            html, body {
+                height: 100%;
+                margin: 0px;
+            }
+            body {
+                background-color: aliceblue;
+                font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; 
+                font-size: 1.2em;
+            }
+            #title {
+                text-align: center;
+                font-size: 2em;
+                font-weight: bold;
+                margin-bottom: 1em;
+            }
+            #start-game {
+                text-align: center;
+                font-size: 1.5em;
+                font-weight: bold;
+                margin-bottom: 1em;
+            }
+            #chat-holder {
+                border-color: black;
+                background-color: rgb(180, 211, 211);
+                font-size: 0.8em;
+                position: relative;
+                float: right; 
+                height: 100%;
+                width: 30%;
+                margin-left: 70%;
+                min-height: 100rem;
+                z-index: 3;
+            }
+            #share-link {
+                position: fixed; 
+                bottom: 0; 
+                left: 1em;
+                font-size: 1em;
+            }
+            #chat-input, #chat-submit {
+                font-size: 1.2em;
+                position: fixed;
+                height: 2em;
+                font-size: 0.5em;
+                margin-top: 85%;
+                margin-bottom: 0;
+            }
+            #chat-input {
+                font-size: 1em;
+                width: 22%;
+                margin-right: 6.2%;
+            }
+            #chat-submit {
+                font-size: 1em;
+                width:  6%;
+            }
+        </style>
     </head>
     <body>
-        <h1>Ice Breaker Thing</h1>
+        <h1 id = "title">NLTK 20 Questions</h1>
         <h2 id = "share-link"></h2>
-        <button onclick="startGame()"" id = "start-game">Start a Game</button>
+        <button onclick="startGame()" id = "start-game">Start a Game</button>
+        <button onclick="resetGame()" id = "reset-game" hidden>New Game</button>
         <form id = "guess-word" onsubmit = "submitGuess(); return false" action = "#" hidden>
             <input type="text" name="guess" id="guess-input">
             <input type="submit" value="Guess">
         </form>
-        <div id = "guess-holder"></div>
-        <div id = "chat-holder" style = "position: relative; float: right; height: 100%; display: fixed; ">
+        <button id = "get-hint" onclick="getHint()" hidden>Get Hint</button>
+        <div id = "guess-holder" hidden><h4>Guesses</h4></div>
+        <h3 id = "winner-holder"></h3>
+        <h2 id = "waiting"></h2>
+        <div id = "chat-holder">
             <form id = "chat-form" onsubmit = "submitChat(); return false" action = "#" >
                 <input type="text" name="chat" id="chat-input" style = "bottom: 0; right: 0;"">
-                <input type="submit" value="Sendyy the Chat" style = "bottom: 0; right: 0;"">
+                <input id = "chat-submit" type="submit" value="Send Chat" style = "bottom: 0; right: 0;"">
             </form>
         </div>
         <script>
@@ -41,7 +103,15 @@
                 }
             }
             function startGame() {
-                $.get("start-game/", function( data ) {
+                $.get("start-game/?username=" + window.username, function( data ) {
+                    window.game_id = JSON.parse(data).game_id;
+                    console.log(window.game_id);
+                    renderGame();
+                });
+            }
+
+            function resetGame() {
+                $.get("reset-game/?game_id=" + window.game_id, function( data ) {
                     window.game_id = JSON.parse(data).game_id;
                     console.log(window.game_id);
                     renderGame();
@@ -50,8 +120,15 @@
             
             function renderGame() {
                 $("#start-game").hide();
-                $("#share-link").text("Share this link with your friends! " + window.location.href + "?game_id=" + window.game_id + "");
+                $("#reset-game").hide();
+                $("#winner-holder").hide();
+                $("#guess-holder").show();
+                $("#waiting").hide();
+                $("#share-link").text("Share this link with your friends! " + window.location.href.substring(0, window.location.href.lastIndexOf("/") + 1) + "?game_id=" + window.game_id + "");
                 $("#guess-word").show();
+                window.guesses = [];
+                $("#guess-holder").html("");
+                clearInterval(window.gameLoop)
                 window.gameLoop = setInterval(updateGuesses, 200);
             }
             
@@ -64,7 +141,7 @@
                 });
             }
             function submitChat() {
-                $.get("submit-chat/?message=" + $("#chat-input").val().replace(" ", "_") + "&game_id=" + window.game_id + "&author=" + window.username, function( data ) {
+                $.get("submit-chat/?message=" + $("#chat-input").val() + "&game_id=" + window.game_id + "&author=" + window.username, function( data ) {
                     var resp = JSON.parse(data);
                     if (resp["error"]) {
                         alert("Error: " + resp["error"]);
@@ -72,25 +149,47 @@
                 });
                 $("#chat-input").val("");
             }
+            function getHint() {
+                $.get("get-hint/?game_id=" + window.game_id, function( data ) {
+                    console.log("hinted")
+                });
+            }
+
 
             function updateGuesses() {
-                if (typeof window.game_id != "undefined") updateChats();
+                if (typeof window.game_id != "undefined") { updateChats(); }
                 $.get("game-status/?game_id=" + window.game_id, function (data) { 
                     var resp = JSON.parse(data);
-                    //console.log(resp)
-                    if (resp["finished"]) {
-                        $("#guess-word").append("<h3 id = \"winner-holder\">" + resp["winner"] + " wins! The word was: " + resp["answer"] + "</h3>");
-                        $("#winner-holder").append('<h2>Waiting for host... or, <a href = ' + window.location.href.substring(window.location.href.lastIndexOf('/') + 1) +'>start your own game!</a>')
-                        clearInterval(window.gameLoop);
+                    if ($("#get-hint").is(":visible") == false && resp["host"] == window.username) {
+                        $("#get-hint").show();
                     }
-                })
+                    //console.log(resp)
+                    if (resp["finished"] && window.finished != true) {
+                        window.finished = true;
+                        console.log(resp)
+                        $("#winner-holder").text(resp["winner"] + " wins! The word was: " + resp["answer"]);
+                        $("#winner-holder").show();
+                        if (window.username != resp["host"]) {
+                            document.getElementById("waiting").innerHTML = 'Waiting for host... or, <a href = ' + window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1) +'>start your own game!</a>';
+                            $("#waiting").show();
+                        } else {
+                            $("#reset-game").show();
+                        
+                        }
+                    } else if (resp["finished"] == false && window.finished == true) {
+                        window.finished = false;
+
+                        resetGame();
+                    }
+
+                });
                 if (typeof window.guesses == "undefined")
                     window.guesses = {"": ""};
                 $.get("update-guesses/?game_id=" + window.game_id, function( data ) {
                     //console.log(data);
                     var guesses = JSON.parse(data);
                     for (let [key, value] of Object.entries(guesses)) {
-                        if (Object.keys(window.guesses).includes(key) == false) {
+                        if (Object.keys(window.guesses).includes(key) == false || window.guesses[key] != value) {
                             window.guesses[key] = value;
                             //console.log("window.guesses: " + Object.keys(window.guesses))
                             $("#guess-holder").append("<div>" + key + ": " + value + "</div>");
@@ -99,7 +198,7 @@
                 });
             }
             function updateChats() {
-                if (typeof window.guesses == "undefined")
+                if (typeof window.chats == "undefined")
                     window.chats = {"": ""};
                 $.get("update-chat/?game_id=" + window.game_id, function( data ) {
                     //console.log(data);
