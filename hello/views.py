@@ -11,7 +11,7 @@ from nltk.corpus.reader.wordnet import WordNetError
 import random
 
 #get popular words and load words list
-nltk.download("book")
+nltk.download("popular")
 
 
 # Create your views here.
