@@ -15,9 +15,22 @@
             <input type="submit" value="Guess">
         </form>
         <div id = "guess-holder"></div>
+        <div id = "chat-holder" style = "position: relative; float: right; height: 100%; display: fixed; ">
+            <div id = "chat-messages"></div>
+            <form id = "chat-form" onsubmit = "submitChat(); return false" action = "#" >
+                <input type="text" name="chat" id="chat-input" style = "bottom: 0; right: 0;"">
+                <input type="submit" value="Sendyy the Chat" style = "bottom: 0; right: 0;"">
+            </form>
+        </div>
         <script>
             function hasName() {
-
+                if (typeof window.username == "undefined") {
+                    let name = window.prompt("Please enter your name: ","Player");
+                    while (name == null || name == "") {
+                        name = window.prompt("PLEASE enter your name: ","Player");
+                    }
+                    window.username = name;
+                }
             }
             function joinGame() {
                 var url_string = window.location.href; //window.location.href
@@ -44,19 +57,30 @@
             }
             
             function submitGuess() {
-                $.get("submit-guess/?guess=" + $("#guess-input").val().replace(" ", "_") + "&game_id=" + window.game_id, function( data ) {
+                $.get("submit-guess/?guess=" + $("#guess-input").val().replace(" ", "_") + "&game_id=" + window.game_id + "&username=" + window.username, function( data ) {
                     var resp = JSON.parse(data);
                     if (resp["error"]) {
                         alert("Error: " + resp["error"]);
                     }
                 });
             }
+            function submitChat() {
+                $.get("submit-chat/?message=" + $("#chat-input").val().replace(" ", "_") + "&game_id=" + window.game_id + "&author=" + window.username, function( data ) {
+                    var resp = JSON.parse(data);
+                    if (resp["error"]) {
+                        alert("Error: " + resp["error"]);
+                    }
+                });
+            }
+
             function updateGuesses() {
+                if (typeof window.game_id != "undefined") updateChats();
                 $.get("game-status/?game_id=" + window.game_id, function (data) { 
                     var resp = JSON.parse(data);
                     //console.log(resp)
                     if (resp["finished"]) {
-                        $("#guess-word").append("<h3>Finished! The word was: " + resp["answer"] + "</h3>");
+                        $("#guess-word").append("<h3 id = \"winner-holder\">" + resp["winner"] + " wins! The word was: " + resp["answer"] + "</h3>");
+                        $("#winner-holder").append('<h2>Waiting for host... or, <a href = ' + window.location.href.substring(window.location.href.lastIndexOf('/') + 1) +'>start your own game!</a>')
                         clearInterval(window.gameLoop);
                     }
                 })
@@ -70,6 +94,22 @@
                             window.guesses[key] = value;
                             //console.log("window.guesses: " + Object.keys(window.guesses))
                             $("#guess-holder").append("<div>" + key + ": " + value + "</div>");
+                        }
+                    }
+                });
+            }
+            function updateChats() {
+                if (typeof window.guesses == "undefined")
+                    window.chats = {"": ""};
+                $.get("update-chat/?game_id=" + window.game_id, function( data ) {
+                    //console.log(data);
+                    var chats = JSON.parse(data);
+                    console.log(chats);
+                    for (let [key, value] of Object.entries(chats)) {
+                        if (Object.keys(window.chats).includes(key) == false) {
+                            window.chats[key] = value;
+                            //console.log("window.guesses: " + Object.keys(window.guesses))
+                            $("#chat-holder").after("<div>" + value[0] + ": " + value[1] + "</div>");
                         }
                     }
                 });

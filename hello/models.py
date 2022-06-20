@@ -8,6 +8,7 @@ class Game(models.Model):
     game_id = models.AutoField(primary_key=True)
     key_word = models.CharField(max_length=100, default="apple")
     finished = models.BooleanField(default=False)
+    winner = models.CharField(max_length=100, default="")
 
 class Guess(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
@@ -15,3 +16,10 @@ class Guess(models.Model):
     closest = models.CharField(max_length=100, default = "")
     correct = models.BooleanField(default=False)
     when = models.DateTimeField("date created", auto_now_add=True)
+
+class Chat(models.Model):
+    chat_id = models.AutoField(primary_key=True)
+    game = models.ForeignKey(Game, on_delete=models.CASCADE)
+    author = models.CharField(max_length=100, default = "")
+    message = models.CharField(max_length=255, default="")
+    when = models.DateTimeField("timestamp", auto_now_add=True)
