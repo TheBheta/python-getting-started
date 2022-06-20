@@ -8,7 +8,9 @@ import nltk
 from nltk.corpus import wordnet as wn
 from nltk.corpus.reader.wordnet import WordNetError
 
+#get popular words and load words list
 nltk.download("popular")
+
 
 # Create your views here.
 def index(request):
