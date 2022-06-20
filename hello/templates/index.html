@@ -16,7 +16,6 @@
         </form>
         <div id = "guess-holder"></div>
         <div id = "chat-holder" style = "position: relative; float: right; height: 100%; display: fixed; ">
-            <div id = "chat-messages"></div>
             <form id = "chat-form" onsubmit = "submitChat(); return false" action = "#" >
                 <input type="text" name="chat" id="chat-input" style = "bottom: 0; right: 0;"">
                 <input type="submit" value="Sendyy the Chat" style = "bottom: 0; right: 0;"">
@@ -71,6 +70,7 @@
                         alert("Error: " + resp["error"]);
                     }
                 });
+                $("#chat-input").val("");
             }
 
             function updateGuesses() {
@@ -104,12 +104,14 @@
                 $.get("update-chat/?game_id=" + window.game_id, function( data ) {
                     //console.log(data);
                     var chats = JSON.parse(data);
-                    console.log(chats);
                     for (let [key, value] of Object.entries(chats)) {
                         if (Object.keys(window.chats).includes(key) == false) {
                             window.chats[key] = value;
                             //console.log("window.guesses: " + Object.keys(window.guesses))
-                            $("#chat-holder").after("<div>" + value[0] + ": " + value[1] + "</div>");
+                            $("#chat-form").before("<div>" + value[0] + ": " + value[1] + "</div>");
+                            if (Object.keys(window.chats).length >= 15) {
+                                $("#chat-holder").children().first().remove();
+                            }
                         }
                     }
                 });
